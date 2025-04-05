@@ -8,8 +8,8 @@ import org.springframework.data.cassandra.repository.config.EnableCassandraRepos
 @EnableCassandraRepositories(basePackages = "com.geomark.maritimemetrics.repository")
 public class MaritimeMetricsApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MaritimeMetricsApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MaritimeMetricsApplication.class, args);
+    }
 
 }

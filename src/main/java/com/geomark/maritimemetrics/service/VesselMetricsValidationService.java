@@ -3,13 +3,14 @@ package com.geomark.maritimemetrics.service;
 import com.geomark.maritimemetrics.model.DataQualityIssue;
 import com.geomark.maritimemetrics.model.VesselMetrics;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *  This service is responsible for validating the VesselMetrics data.
- *  It checks for missing or invalid values and adds data quality issues to the metrics.
- *  It can be used to ensure that the data is clean and ready for processing.
+ * This service is responsible for validating the VesselMetrics data.
+ * It checks for missing or invalid values and adds data quality issues to the metrics.
+ * It can be used to ensure that the data is clean and ready for processing.
  */
 @Service
 public class VesselMetricsValidationService {

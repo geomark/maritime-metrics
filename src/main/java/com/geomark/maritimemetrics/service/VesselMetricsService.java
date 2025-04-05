@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -24,7 +25,6 @@ import java.util.stream.Collectors;
 
 /**
  * This service is responsible for implementing the business logic required by the VesselMetricsController
- *
  */
 @Service
 @RequiredArgsConstructor
@@ -48,14 +48,14 @@ public class VesselMetricsService {
     public Mono<Long> processAndSaveMetrics(MultipartFile csvFile) throws IOException {
         // Read the CSV file and convert it to a list of VesselMetrics objects
         Flux<List<VesselMetrics>> fl = CSVReaderProvider.ofReader(csvFile)
-                .map(CSVReaderProvider::parseMetrics )
-                .filter( metric -> metric.getKey() != null)
+                .map(CSVReaderProvider::parseMetrics)
+                .filter(metric -> metric.getKey() != null)
                 .buffer(10, 1)
                 .onErrorResume(e -> {
                     log.error("Error processing metrics", e);
-                    return Mono.error(new DataProcessingException("Error processing metrics",e));
+                    return Mono.error(new DataProcessingException("Error processing metrics", e));
                 })
-                .doOnComplete( () -> log.info("Completed processing metrics"));
+                .doOnComplete(() -> log.info("Completed processing metrics"));
 
         fl.subscribe(processorService);
         return fl.count();
@@ -70,9 +70,9 @@ public class VesselMetricsService {
      * @return a Slice of SpeedDifference objects
      */
     public Slice<SpeedDifference> getSpeedDifferences(String vesselId, int page, int size, Sort.Direction sort) {
-        CassandraPageRequest pageable = CassandraPageRequest.of(page, size, sort,"timestamp");
-        
-        return repository.fetchValidByVesselId(vesselId,pageable)
+        CassandraPageRequest pageable = CassandraPageRequest.of(page, size, sort, "timestamp");
+
+        return repository.fetchValidByVesselId(vesselId, pageable)
                 .map(metric -> new SpeedDifference(
                         metric.getKey().getTimestamp(),
                         metric.getActualSpeed() - metric.getProposedSpeed()
@@ -82,13 +82,13 @@ public class VesselMetricsService {
 
     /**
      * Fetches the data quality issues for a given vessel.
+     *
      * @param vesselId the ID of the vessel
      * @return a Mono containing a Map of DataQualityIssue and their counts
      */
-    public Mono<Map<DataQualityIssue, Long>> getDataQualityIssues(String vesselId)
-    {
+    public Mono<Map<DataQualityIssue, Long>> getDataQualityIssues(String vesselId) {
         // Group the data quality issues by their type
-         return reactiveRepository.fetchInvalidByVesselId(vesselId)
+        return reactiveRepository.fetchInvalidByVesselId(vesselId)
                 .flatMapIterable(VesselMetrics::getDataQualityIssues)
                 .collect(Collectors.groupingBy(feature -> feature, Collectors.summingLong(feature -> 1)));
 
@@ -96,16 +96,16 @@ public class VesselMetricsService {
 
     /**
      * Groups the VesselMetrics by their data quality issues.
+     *
      * @param vesselId the ID of the vessel
      * @return a Mono containing a Map of DataQualityIssue and their corresponding VesselMetrics
      */
-    public Mono<Map<DataQualityIssue, List<VesselMetrics>>>  groupVesselMetricsByDataQualityIssue(String vesselId,DataQualityIssue issue) {
+    public Mono<Map<DataQualityIssue, List<VesselMetrics>>> groupVesselMetricsByDataQualityIssue(String vesselId, DataQualityIssue issue) {
         Flux<VesselMetrics> data;
-        if(issue == null){
+        if (issue == null) {
             data = reactiveRepository.fetchInvalidByVesselId(vesselId);
-        }
-        else{
-            data = reactiveRepository.fetchInvalidByVesselIdAndDataQualityIssue( vesselId, issue);
+        } else {
+            data = reactiveRepository.fetchInvalidByVesselIdAndDataQualityIssue(vesselId, issue);
         }
 
         return data
@@ -117,19 +117,19 @@ public class VesselMetricsService {
 
     /**
      * Fetches the vehicles compliance statistics.
+     *
      * @return a Flux of Maps containing the compliance statistics
      */
-    public Flux<Map<Double ,Object>> vehicleComplianceStats() {
+    public Flux<Map<Double, Object>> vehicleComplianceStats() {
 
         return reactiveRepository.fetchVehicleRankings();
     }
 
 
     public Flux<VesselMetrics> getVesselMetrics(String vesselId, Instant from, Instant to) {
-        if(from != null && to != null){
+        if (from != null && to != null) {
             return reactiveRepository.fetchByVesselIdAndTimestampBetween(vesselId, from, to);
-        }
-        else{
+        } else {
             return reactiveRepository.fetchValidByVesselId(vesselId);
         }
     }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ import java.util.Map;
 
 
 /**
- *  This controller handles HTTP requests related to vessel metrics.
+ * This controller handles HTTP requests related to vessel metrics.
  */
 @RestController
 @RequestMapping("/api/vessels")
@@ -33,7 +34,7 @@ public class VesselMetricsController {
 
 
     @Operation(tags = "Task 0 (Initial ingest) ", summary = "Ingests a CSV file containing vessel metrics.")
-    @PostMapping(value = "/ingest", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PostMapping(value = "/ingest", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public Mono<Long> ingestMetrics(@RequestPart MultipartFile file) throws IOException {
         return metricsService.processAndSaveMetrics(file);
     }
@@ -44,8 +45,8 @@ public class VesselMetricsController {
     public Slice<SpeedDifference> getSpeedDifferences(@PathVariable String vesselId,
                                                       @RequestParam(required = false) int pageNo,
                                                       @RequestParam(required = false) int pageSize,
-                                                      @RequestParam(required = false)  Sort.Direction  sortBy) {
-        return metricsService.getSpeedDifferences(vesselId,pageNo,pageSize,sortBy);
+                                                      @RequestParam(required = false) Sort.Direction sortBy) {
+        return metricsService.getSpeedDifferences(vesselId, pageNo, pageSize, sortBy);
     }
 
 
@@ -58,7 +59,7 @@ public class VesselMetricsController {
 
     @Operation(tags = "Task 3", summary = "Returns vehicle compliance statistics.")
     @GetMapping("/vehicle-compliance-stats")
-    public Flux<Map<Double ,Object>> vehicleComplianceStats() {
+    public Flux<Map<Double, Object>> vehicleComplianceStats() {
         return metricsService.vehicleComplianceStats();
     }
 
@@ -66,10 +67,10 @@ public class VesselMetricsController {
     @GetMapping("/{vesselId}/vessel-metrics")
     public Flux<VesselMetrics> getVesselMetrics(@PathVariable String vesselId,
                                                 @RequestParam(required = true) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS") LocalDateTime from,
-                                                @RequestParam(required = true) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS") LocalDateTime  to){
+                                                @RequestParam(required = true) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS") LocalDateTime to) {
         Instant start = from.toInstant(java.time.ZoneOffset.UTC);
         Instant end = to.toInstant(java.time.ZoneOffset.UTC);
-        return metricsService.getVesselMetrics(vesselId,start, end);
+        return metricsService.getVesselMetrics(vesselId, start, end);
     }
 
 
@@ -77,7 +78,7 @@ public class VesselMetricsController {
     @GetMapping("/{vesselId}/grouped-by-data-issues")
     public Mono<Map<DataQualityIssue, List<VesselMetrics>>> groupProblematicRecords(@PathVariable String vesselId,
                                                                                     @RequestParam(required = false) DataQualityIssue issue) {
-        return metricsService.groupVesselMetricsByDataQualityIssue(vesselId,issue);
+        return metricsService.groupVesselMetricsByDataQualityIssue(vesselId, issue);
     }
 
 }

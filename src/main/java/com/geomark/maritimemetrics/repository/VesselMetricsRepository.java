@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 /**
- *  Non-reactive Repository interface for VesselMetrics.
+ * Non-reactive Repository interface for VesselMetrics.
  */
 public interface VesselMetricsRepository extends CassandraRepository<VesselMetrics, VesselMetricsKey> {
 

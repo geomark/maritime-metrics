@@ -1,9 +1,10 @@
 package com.geomark.maritimemetrics.model;
 
-import lombok.ToString;
-import org.springframework.data.cassandra.core.mapping.Table;
 import lombok.Data;
+import lombok.ToString;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.Table;
+
 import java.util.List;
 
 /**

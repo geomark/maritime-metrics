@@ -6,11 +6,12 @@ import com.geomark.maritimemetrics.repository.VesselMetricsReactiveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.function.Consumer;
 
 /**
- *  This service is responsible for processing VesselMetrics data.
+ * This service is responsible for processing VesselMetrics data.
  */
 @Service
 @RequiredArgsConstructor
@@ -50,21 +51,22 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
 
     /**
      * Calculates derived metrics for the given VesselMetrics object.
-     * @param metric the VesselMetrics object to calculate derived metrics for
+     *
+     * @param metric  the VesselMetrics object to calculate derived metrics for
      * @param context the context in which to calculate the derived metrics
      */
     private void calculateDerivedMetrics(VesselMetrics metric, List<VesselMetrics> context) {
-       context.stream()
+        context.stream()
                 .filter(mtr -> mtr.getKey().getVesselId().equals(metric.getKey().getVesselId()))
-                .filter(mtr -> mtr.getLatitude() != null ||  mtr.getLongitude() != null)
-                .findFirst().ifPresent( mtr -> {
-                     if(metric.getLatitude() != null &&  metric.getLongitude() != null){
-                         double actualDistance = calculateDistance(metric.getLatitude(), metric.getLongitude(), mtr.getLatitude(), mtr.getLongitude());
-                         double timeDifference = (metric.getKey().getTimestamp().toEpochMilli() - mtr.getKey().getTimestamp().toEpochMilli()) / 3600000.0;
-                         // in hours
-                         double actualSpeed = calculateSpeed(actualDistance, timeDifference);
-                         metric.setActualSpeed(actualSpeed);
-                     }
+                .filter(mtr -> mtr.getLatitude() != null || mtr.getLongitude() != null)
+                .findFirst().ifPresent(mtr -> {
+                    if (metric.getLatitude() != null && metric.getLongitude() != null) {
+                        double actualDistance = calculateDistance(metric.getLatitude(), metric.getLongitude(), mtr.getLatitude(), mtr.getLongitude());
+                        double timeDifference = (metric.getKey().getTimestamp().toEpochMilli() - mtr.getKey().getTimestamp().toEpochMilli()) / 3600000.0;
+                        // in hours
+                        double actualSpeed = calculateSpeed(actualDistance, timeDifference);
+                        metric.setActualSpeed(actualSpeed);
+                    }
                 });
     }
 
@@ -101,9 +103,6 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
     private double calculateSpeed(double distance, double time) {
         return distance / time;
     }
-
-
-
 
 
 }

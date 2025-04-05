@@ -7,6 +7,7 @@ import de.siegmar.fastcsv.reader.CsvRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -22,7 +23,7 @@ public class CSVReaderProvider {
 
 
     /**
-     *  Private constructor to prevent instantiation.
+     * Private constructor to prevent instantiation.
      */
     private CSVReaderProvider() {
         // Prevent instantiation
@@ -44,6 +45,7 @@ public class CSVReaderProvider {
 
     /**
      * Reads the CSV file and converts it to a stream of CsvRecord objects.
+     *
      * @param csvFile the CSV file to read
      * @return a CsvReader object
      * @throws IOException
@@ -59,7 +61,8 @@ public class CSVReaderProvider {
 
     /**
      * Parses a CSV record into a VesselMetrics object.
-     * @param line  the CSV record to parse
+     *
+     * @param line the CSV record to parse
      * @return a VesselMetrics object
      */
     public static VesselMetrics parseMetrics(CsvRecord line) {
@@ -68,20 +71,20 @@ public class CSVReaderProvider {
 
         log.info("Entered Line" + line.getStartingLineNumber());
 
-        if(line.getStartingLineNumber() == 1){
+        if (line.getStartingLineNumber() == 1) {
             // Skip the header line
-            return  new VesselMetrics();
+            return new VesselMetrics();
         }
 
-        String vessel_code  = line.getField(0);
-        String datetime  = line.getField(1);
-        String latitude  = line.getField(2);
-        String longitude  = line.getField(3);
-        String power  = line.getField(4);
+        String vessel_code = line.getField(0);
+        String datetime = line.getField(1);
+        String latitude = line.getField(2);
+        String longitude = line.getField(3);
+        String power = line.getField(4);
         String fuel_consumption = line.getField(5);
         String actual_speed_overground = line.getField(6);
-        String proposed_speed_overground  = line.getField(7);
-        String predicted_fuel_consumption  = line.getField(8);
+        String proposed_speed_overground = line.getField(7);
+        String predicted_fuel_consumption = line.getField(8);
 
         VesselMetrics newItem = new VesselMetrics();
 
@@ -89,7 +92,7 @@ public class CSVReaderProvider {
         key.setVesselId(vessel_code);
 
 
-        Instant timestamp =  LocalDateTime.parse(datetime, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        Instant timestamp = LocalDateTime.parse(datetime, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atZone(java.time.ZoneId.of("UTC"))
                 .toInstant();
 
@@ -97,26 +100,26 @@ public class CSVReaderProvider {
 
         newItem.setKey(key);
 
-        if(latitude != null && !latitude.equals("NULL")){
+        if (latitude != null && !latitude.equals("NULL")) {
             newItem.setLatitude(Double.parseDouble(latitude));
         }
 
-        if(longitude != null && !longitude.equals("NULL")){
+        if (longitude != null && !longitude.equals("NULL")) {
             newItem.setLongitude(Double.parseDouble(longitude));
         }
-        if(predicted_fuel_consumption != null  && !predicted_fuel_consumption.equals("NULL")){
+        if (predicted_fuel_consumption != null && !predicted_fuel_consumption.equals("NULL")) {
             newItem.setFuelConsumption(Double.parseDouble(predicted_fuel_consumption));
         }
-        if(power != null  && !power.equals("NULL")){
+        if (power != null && !power.equals("NULL")) {
             newItem.setEngineRpm(Double.parseDouble(power));
         }
-        if(fuel_consumption != null  && !fuel_consumption.equals("NULL")){
+        if (fuel_consumption != null && !fuel_consumption.equals("NULL")) {
             newItem.setFuelConsumption(Double.parseDouble(fuel_consumption));
         }
-        if(actual_speed_overground != null  && !actual_speed_overground.equals("NULL")){
+        if (actual_speed_overground != null && !actual_speed_overground.equals("NULL")) {
             newItem.setActualSpeed(Double.parseDouble(actual_speed_overground));
         }
-        if(proposed_speed_overground != null  && !proposed_speed_overground.equals("NULL")){
+        if (proposed_speed_overground != null && !proposed_speed_overground.equals("NULL")) {
             newItem.setProposedSpeed(Double.parseDouble(proposed_speed_overground));
         }
 
