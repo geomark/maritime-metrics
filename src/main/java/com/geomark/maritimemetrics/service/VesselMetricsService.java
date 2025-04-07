@@ -35,8 +35,9 @@ public class VesselMetricsService {
 
     private final VesselMetricsRepository repository;
 
-
     private final VesselProcessorService processorService;
+
+    private final VesselParserService  parserService;
 
     /**
      * Processes the CSV file and saves the metrics to the database.
@@ -48,10 +49,11 @@ public class VesselMetricsService {
     public Mono<Long> processAndSaveMetrics(MultipartFile csvFile) throws IOException {
         // Read the CSV file and convert it to a list of VesselMetrics objects
         Flux<List<VesselMetrics>> fl = CSVReaderProvider.ofReader(csvFile)
-                .map(CSVReaderProvider::parseMetrics)
+                .map(parserService::parseMetrics)
                 .filter(metric -> metric.getKey() != null)
                 .buffer(10, 1)
                 .onErrorResume(e -> {
+                    e.printStackTrace();
                     log.error("Error processing metrics", e);
                     return Mono.error(new DataProcessingException("Error processing metrics", e));
                 })

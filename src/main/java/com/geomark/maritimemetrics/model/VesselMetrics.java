@@ -8,7 +8,7 @@ import org.springframework.data.cassandra.core.mapping.Table;
 import java.util.List;
 
 /**
- *
+ * This class represents the metrics of a vessel (Cassandra Table).
  */
 @Data
 @Table("vessel_metrics")
