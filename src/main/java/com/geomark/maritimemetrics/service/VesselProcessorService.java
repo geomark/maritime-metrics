@@ -6,7 +6,6 @@ import com.geomark.maritimemetrics.repository.VesselMetricsReactiveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -22,6 +21,8 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
 
     private final VesselMetricsValidationService validationService;
 
+
+
     /**
      * Processes the input list of VesselMetrics.
      * This method is called when the input list is ready for processing.
@@ -30,7 +31,7 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
      */
     @Override
     public void accept(List<VesselMetrics> o) {
-        log.info("Entered VesselProcessorService {}", o.toString());
+
 
         List<VesselMetrics> revList = o.reversed();
         VesselMetrics current = revList.removeFirst();
@@ -38,14 +39,15 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
         calculateDerivedMetrics(current, revList);
         validationService.validateMetrics(current);
 
-        reaciveRepository.save(current)
+        log.info("Processing Point: {}", current.getKey());
+
+        reaciveRepository.insert(current)
                 .doOnSuccess(savedMetric -> {
                     log.info("Saved metric: {}", savedMetric);
                 })
                 .doOnError(e -> {
                     log.error("Error saving metric: {}", e.getMessage());
-                })
-                .subscribe();
+                }).subscribe();
     }
 
 
@@ -60,7 +62,7 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
                 .filter(mtr -> mtr.getKey().getVesselId().equals(metric.getKey().getVesselId()))
                 .filter(mtr -> mtr.getLatitude() != null || mtr.getLongitude() != null)
                 .findFirst().ifPresent(mtr -> {
-                    if (metric.getLatitude() != null && metric.getLongitude() != null) {
+                    if (metric.getLatitude() != null && metric.getLongitude() != null && mtr.getLatitude() != null && mtr.getLongitude() != null) {
                         double actualDistance = calculateDistance(metric.getLatitude(), metric.getLongitude(), mtr.getLatitude(), mtr.getLongitude());
                         double timeDifference = (metric.getKey().getTimestamp().toEpochMilli() - mtr.getKey().getTimestamp().toEpochMilli()) / 3600000.0;
                         // in hours

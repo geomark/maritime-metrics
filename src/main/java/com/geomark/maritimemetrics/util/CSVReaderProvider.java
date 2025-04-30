@@ -7,11 +7,11 @@ import de.siegmar.fastcsv.reader.CsvRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * This class is responsible for parsing CSV files containing vessel metrics
@@ -91,6 +91,13 @@ public class CSVReaderProvider {
         VesselMetricsKey key = new VesselMetricsKey();
         key.setVesselId(vessel_code);
 
+        newItem.setLatitude(csvValueToDouble(latitude));
+        newItem.setLongitude(csvValueToDouble(longitude));
+        newItem.setFuelConsumption(csvValueToDouble(predicted_fuel_consumption));
+        newItem.setEngineRpm(csvValueToDouble(power));
+        newItem.setFuelConsumption(csvValueToDouble(fuel_consumption));
+        newItem.setActualSpeed(csvValueToDouble(actual_speed_overground));
+        newItem.setProposedSpeed(csvValueToDouble(proposed_speed_overground));
 
         Instant timestamp = LocalDateTime.parse(datetime, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 .atZone(java.time.ZoneId.of("UTC"))
@@ -100,30 +107,25 @@ public class CSVReaderProvider {
 
         newItem.setKey(key);
 
-        if (latitude != null && !latitude.equals("NULL")) {
-            newItem.setLatitude(Double.parseDouble(latitude));
-        }
-
-        if (longitude != null && !longitude.equals("NULL")) {
-            newItem.setLongitude(Double.parseDouble(longitude));
-        }
-        if (predicted_fuel_consumption != null && !predicted_fuel_consumption.equals("NULL")) {
-            newItem.setFuelConsumption(Double.parseDouble(predicted_fuel_consumption));
-        }
-        if (power != null && !power.equals("NULL")) {
-            newItem.setEngineRpm(Double.parseDouble(power));
-        }
-        if (fuel_consumption != null && !fuel_consumption.equals("NULL")) {
-            newItem.setFuelConsumption(Double.parseDouble(fuel_consumption));
-        }
-        if (actual_speed_overground != null && !actual_speed_overground.equals("NULL")) {
-            newItem.setActualSpeed(Double.parseDouble(actual_speed_overground));
-        }
-        if (proposed_speed_overground != null && !proposed_speed_overground.equals("NULL")) {
-            newItem.setProposedSpeed(Double.parseDouble(proposed_speed_overground));
-        }
 
         return newItem;
     }
+
+
+    private static Double csvValueToDouble(String value) {
+        if (value == null || value.equals("NULL")) {
+            return null;
+        }
+        return Double.parseDouble(value);
+    }
+
+    private static ZoneId getZoneIdFromCoordinates(double latitude, double longitude) {
+
+        // Convert latitude and longitude to a ZoneId
+        // This is a placeholder for actual logic to determine the ZoneId based on coordinates
+        return ZoneId.of("UTC");
+    }
+
+
 
 }

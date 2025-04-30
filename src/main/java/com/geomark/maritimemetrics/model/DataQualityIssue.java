@@ -1,5 +1,8 @@
 package com.geomark.maritimemetrics.model;
 
+/**
+ *  This enum represents different types of data quality issues that can occur
+ */
 public enum DataQualityIssue {
     MISSING_DATA("Missing data"),
     INVALID_DATA("Invalid data"),
