@@ -47,8 +47,7 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
                 })
                 .doOnError(e -> {
                     log.error("Error saving metric: {}", e.getMessage());
-                })
-                .block();
+                }).subscribe();
     }
 
 

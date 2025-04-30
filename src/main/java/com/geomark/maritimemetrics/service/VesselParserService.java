@@ -76,6 +76,10 @@ public class VesselParserService {
     }
 
 
+    /**
+     * @param value
+     * @return
+     */
     private  Double csvValueToDouble(String value) {
         if (value == null || value.equals("NULL")) {
             return null;
@@ -83,6 +87,11 @@ public class VesselParserService {
         return Double.parseDouble(value);
     }
 
+    /**
+     * @param latitude
+     * @param longitude
+     * @return
+     */
     private  ZoneId getZoneIdFromCoordinates(Double latitude, Double longitude) {
         if(latitude == null || longitude == null){
             return java.time.ZoneId.of("UTC");

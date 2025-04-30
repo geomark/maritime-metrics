@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -47,20 +50,26 @@ public class VesselMetricsService {
      * @throws IOException if an error occurs while reading the file
      */
     public Mono<Long> processAndSaveMetrics(MultipartFile csvFile) throws IOException {
+        Scheduler s = Schedulers.newParallel("parallel-scheduler", 4);
+
         // Read the CSV file and convert it to a list of VesselMetrics objects
+
         Flux<List<VesselMetrics>> fl = CSVReaderProvider.ofReader(csvFile)
                 .map(parserService::parseMetrics)
                 .filter(metric -> metric.getKey() != null)
                 .buffer(10, 1)
-                .onErrorResume(e -> {
-                    e.printStackTrace();
-                    log.error("Error processing metrics", e);
-                    return Mono.error(new DataProcessingException("Error processing metrics", e));
-                })
+
+                .onErrorContinue((throwable, o) -> {
+                            log.error("Error processing line: {}", o);
+                            log.error("Error message: {}", throwable.getMessage());
+                        })
                 .doOnComplete(() -> log.info("Completed processing metrics"));
+//                .parallel()
+//                .runOn(s);
 
         fl.subscribe(processorService);
-        return fl.count();
+
+        return Mono.empty();
 
     }
 
@@ -112,7 +121,8 @@ public class VesselMetricsService {
 
         return data
                 .flatMap(vm -> Flux.fromIterable(vm.getDataQualityIssues())
-                        .map(feature -> Map.entry(feature, vm))) // Map each feature to the object A
+                        .map(feature -> Map.entry(feature, vm)))
+
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
