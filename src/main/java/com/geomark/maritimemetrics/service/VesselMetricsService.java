@@ -2,6 +2,7 @@ package com.geomark.maritimemetrics.service;
 
 import com.geomark.maritimemetrics.exceptions.DataProcessingException;
 import com.geomark.maritimemetrics.model.DataQualityIssue;
+import com.geomark.maritimemetrics.model.ImportResult;
 import com.geomark.maritimemetrics.model.SpeedDifference;
 import com.geomark.maritimemetrics.model.VesselMetrics;
 import com.geomark.maritimemetrics.repository.VesselMetricsReactiveRepository;
@@ -12,6 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.cassandra.core.query.CassandraPageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
@@ -22,8 +28,11 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +51,8 @@ public class VesselMetricsService {
 
     private final VesselParserService  parserService;
 
+    private final SimpMessagingTemplate simpMessagingTemplate;
+
     /**
      * Processes the CSV file and saves the metrics to the database.
      *
@@ -49,29 +60,66 @@ public class VesselMetricsService {
      * @return a Mono containing the count of processed metrics
      * @throws IOException if an error occurs while reading the file
      */
-    public Mono<Long> processAndSaveMetrics(MultipartFile csvFile) throws IOException {
+    @Async
+    public void processAndSaveMetrics(MultipartFile csvFile) throws IOException {
         Scheduler s = Schedulers.newParallel("parallel-scheduler", 4);
 
         // Read the CSV file and convert it to a list of VesselMetrics objects
 
+        AtomicLong counter = new AtomicLong(0);
+        AtomicLong errorCounter = new AtomicLong(0);
+        AtomicLong completiontime = new AtomicLong(System.currentTimeMillis());
+        List<String> errors = new ArrayList<>();
+
+        ImportResult asyncRes = new ImportResult(
+                counter,
+                errorCounter,
+                completiontime,
+                errors);
+        
+        
         Flux<List<VesselMetrics>> fl = CSVReaderProvider.ofReader(csvFile)
                 .map(parserService::parseMetrics)
                 .filter(metric -> metric.getKey() != null)
                 .buffer(10, 1)
 
                 .onErrorContinue((throwable, o) -> {
+                            asyncRes.ingestionErrors().incrementAndGet();
+                            asyncRes.errorMessages().add(throwable.getMessage());
                             log.error("Error processing line: {}", o);
                             log.error("Error message: {}", throwable.getMessage());
                         })
-                .doOnComplete(() -> log.info("Completed processing metrics"));
-//                .parallel()
-//                .runOn(s);
+                .doOnEach( signal -> {
+                    if (signal.isOnNext()) {
+                        long count = asyncRes.validRecords().incrementAndGet();
+                        log.info("Processed {} lines", count);
+                    }
+                })
+                .doOnComplete(() -> {
+                    stompResponse( asyncRes);
+                });
+
 
         fl.subscribe(processorService);
-
-        return Mono.empty();
-
     }
+
+
+
+
+    private ImportResult stompResponse(ImportResult asyncRes) {
+
+        log.info("Completed processing {} lines", asyncRes.validRecords().get());
+        log.info("Completed processing metrics in {} milliseconds", asyncRes.totalTimeElapsed().get());
+        log.info("Total errors: {}",asyncRes.ingestionErrors().get());
+
+
+        simpMessagingTemplate.convertAndSend("/topic/ingestionResults", asyncRes);
+
+        return asyncRes;
+    }
+
+
+
 
 
     /**
@@ -136,6 +184,7 @@ public class VesselMetricsService {
 
         return reactiveRepository.fetchVehicleRankings();
     }
+
 
 
     public Flux<VesselMetrics> getVesselMetrics(String vesselId, Instant from, Instant to) {

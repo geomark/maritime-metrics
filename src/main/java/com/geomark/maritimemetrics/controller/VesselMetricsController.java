@@ -1,6 +1,7 @@
 package com.geomark.maritimemetrics.controller;
 
 import com.geomark.maritimemetrics.model.DataQualityIssue;
+import com.geomark.maritimemetrics.model.ImportResult;
 import com.geomark.maritimemetrics.model.SpeedDifference;
 import com.geomark.maritimemetrics.model.VesselMetrics;
 import com.geomark.maritimemetrics.service.VesselMetricsService;
@@ -10,16 +11,20 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 
 /**
@@ -32,11 +37,18 @@ public class VesselMetricsController {
 
     private final VesselMetricsService metricsService;
 
+    @MessageMapping("/ingestionResults")
+    public ImportResult notifiyComplete(ImportResult message) throws Exception {
+        return message;
+    }
+
+
 
     @Operation(tags = "Task 0 (Initial ingest) ", summary = "Ingests a CSV file containing vessel metrics.")
     @PostMapping(value = "/ingest", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public Mono<Long> ingestMetrics(@RequestPart MultipartFile file) throws IOException {
-        return metricsService.processAndSaveMetrics(file);
+    public Mono<Void> ingestMetrics(@RequestPart MultipartFile file) throws IOException {
+        metricsService.processAndSaveMetrics(file);
+        return Mono.empty();
     }
 
 

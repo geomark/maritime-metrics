@@ -5,6 +5,7 @@ import com.geomark.maritimemetrics.model.VesselMetrics;
 import com.geomark.maritimemetrics.repository.VesselMetricsReactiveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.function.Consumer;
@@ -17,7 +18,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
 
-    private final VesselMetricsReactiveRepository reaciveRepository;
+    private final VesselMetricsReactiveRepository reactiveRepository;
 
     private final VesselMetricsValidationService validationService;
 
@@ -31,8 +32,6 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
      */
     @Override
     public void accept(List<VesselMetrics> o) {
-
-
         List<VesselMetrics> revList = o.reversed();
         VesselMetrics current = revList.removeFirst();
 
@@ -40,8 +39,7 @@ public class VesselProcessorService implements Consumer<List<VesselMetrics>> {
         validationService.validateMetrics(current);
 
         log.info("Processing Point: {}", current.getKey());
-
-        reaciveRepository.insert(current)
+        reactiveRepository.insert(current)
                 .doOnSuccess(savedMetric -> {
                     log.info("Saved metric: {}", savedMetric);
                 })

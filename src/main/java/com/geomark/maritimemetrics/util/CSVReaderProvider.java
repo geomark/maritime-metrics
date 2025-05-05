@@ -39,6 +39,7 @@ public class CSVReaderProvider {
      */
     public static Flux<CsvRecord> ofReader(MultipartFile file) throws IOException {
         CSVReaderProvider parser = new CSVReaderProvider();
+
         return Flux.fromIterable(parser.reader(file.getInputStream()));
     }
 
